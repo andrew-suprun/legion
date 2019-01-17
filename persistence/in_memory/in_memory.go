@@ -1,11 +1,12 @@
 package in_memory
 
 import (
-	"legion/aggregates"
-	"legion/errors"
-	"legion/es"
-	"legion/server"
 	"time"
+
+	"github.com/andrew-suprun/legion/aggregates"
+	"github.com/andrew-suprun/legion/errors"
+	"github.com/andrew-suprun/legion/es"
+	"github.com/andrew-suprun/legion/server"
 
 	"github.com/reillywatson/goloose"
 )

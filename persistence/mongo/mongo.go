@@ -1,8 +1,9 @@
 package mongo
 
 import (
-	"legion/es"
 	"time"
+
+	"github.com/andrew-suprun/legion/es"
 )
 
 type persistence struct {

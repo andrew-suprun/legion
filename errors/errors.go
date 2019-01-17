@@ -2,11 +2,12 @@ package errors
 
 import (
 	"bytes"
-	"legion/es"
-	"legion/json"
 	"os"
 	"runtime/debug"
 	"strings"
+
+	"github.com/andrew-suprun/legion/es"
+	"github.com/andrew-suprun/legion/json"
 )
 
 // TODO: Ability to chain errors
@@ -74,11 +75,11 @@ func StackTrace() []string {
 	lines := strings.Split(stack, "\n")
 	for i := 0; i < len(lines)-1; i++ {
 		line := lines[i]
-		if strings.HasPrefix(line, "legion/") || strings.HasPrefix(line, "main.") {
+		if strings.HasPrefix(line, "github.com/andrew-suprun/legion/") || strings.HasPrefix(line, "main.") {
 			name := strings.Split(line, "(0")[0]
 			address := strings.Split(strings.TrimSpace(lines[i+1]), " ")[0]
 
-			if strings.HasPrefix(name, "legion/errors.") || strings.HasPrefix(name, "legion/server.") {
+			if strings.HasPrefix(name, "github.com/andrew-suprun/legion/errors.") || strings.HasPrefix(name, "github.com/andrew-suprun/legion/server.") {
 				// skip
 			} else {
 				names = append(names, name)

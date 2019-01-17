@@ -4,8 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"legion/json"
 	"time"
+
+	"github.com/andrew-suprun/legion/json"
 )
 
 type CommandType string

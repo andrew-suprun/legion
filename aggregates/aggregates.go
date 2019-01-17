@@ -1,8 +1,9 @@
 package aggregates
 
 import (
-	"legion/es"
 	"log"
+
+	"github.com/andrew-suprun/legion/es"
 )
 
 func Aggregate(entity es.Info, event es.Info) {

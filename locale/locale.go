@@ -2,7 +2,8 @@ package locale
 
 import (
 	"fmt"
-	"legion/es"
+
+	"github.com/andrew-suprun/legion/es"
 )
 
 func Translate(locale, text string, params ...es.Info) string {

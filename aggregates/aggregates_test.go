@@ -1,8 +1,8 @@
 package aggregates
 
 import (
-	"legion/es"
-	"legion/json"
+	"github.com/andrew-suprun/legion/es"
+	"github.com/andrew-suprun/legion/json"
 
 	"log"
 	"reflect"

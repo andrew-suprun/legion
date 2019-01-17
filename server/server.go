@@ -2,10 +2,11 @@ package server
 
 import (
 	"context"
-	"legion/errors"
-	"legion/es"
-	"legion/json"
-	"legion/tasks"
+
+	"github.com/andrew-suprun/legion/errors"
+	"github.com/andrew-suprun/legion/es"
+	"github.com/andrew-suprun/legion/json"
+	"github.com/andrew-suprun/legion/tasks"
 
 	"sync"
 	"time"

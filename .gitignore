@@ -1,0 +1,8 @@
+bin
+pkg
+*.test
+*.out
+*.log
+*.pkg
+.DS_Store
+.vscode

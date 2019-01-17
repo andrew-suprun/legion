@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"legion/connections"
-	"legion/es"
-	"legion/users"
+	"github.com/andrew-suprun/legion/connections"
+	"github.com/andrew-suprun/legion/es"
+	"github.com/andrew-suprun/legion/users"
 )
 
 // TODO: Refactor
