@@ -1,15 +1,17 @@
 package main
 
 import (
-	"github.com/andrew-suprun/legion/server"
+	"fmt"
+	"runtime/debug"
+
+	"github.com/andrew-suprun/legion/json"
+
+	"github.com/andrew-suprun/legion/errors"
 )
 
 func main() {
-	server.New(
-		nil,
-		nil,
-		nil,
-		nil,
-	)
 
+	fmt.Println(string(debug.Stack()))
+	fmt.Println("----")
+	fmt.Println(json.Encode(errors.StackTrace()))
 }

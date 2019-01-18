@@ -59,12 +59,6 @@
   - in-memory
   - using mongo
 
-# Design
-- three separate product categories
-  - spending accounts
-  - saving accounts
-  - insurance
-
 # Strategies
 - backup strategy
   - incremental backup only need to store command and events since last backup

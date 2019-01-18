@@ -2,7 +2,6 @@ package errors
 
 import (
 	"bytes"
-	"os"
 	"runtime/debug"
 	"strings"
 
@@ -60,34 +59,19 @@ func (err Error) Error() string {
 }
 
 func StackTrace() []string {
-	projectPath, _ := os.Getwd()
-	for len(projectPath) > 0 {
-		if _, err := os.Stat(projectPath + "/go.mod"); !os.IsNotExist(err) {
-			break
-		}
-		projectPath = projectPath[:strings.LastIndex(projectPath, "/")]
-	}
-
-	projectPathLen := len(projectPath) + 1
 	var names []string
 	var addresses []string
 	stack := string(debug.Stack())
 	lines := strings.Split(stack, "\n")
-	for i := 0; i < len(lines)-1; i++ {
+	for i := 5; i < len(lines)-1; i++ {
 		line := lines[i]
-		if strings.HasPrefix(line, "github.com/andrew-suprun/legion/") || strings.HasPrefix(line, "main.") {
-			name := strings.Split(line, "(0")[0]
-			address := strings.Split(strings.TrimSpace(lines[i+1]), " ")[0]
+		name := strings.Split(line, "(0x")[0]
+		address := strings.Split(strings.TrimSpace(lines[i+1]), " ")[0]
 
-			if strings.HasPrefix(name, "github.com/andrew-suprun/legion/errors.") || strings.HasPrefix(name, "github.com/andrew-suprun/legion/server.") {
-				// skip
-			} else {
-				names = append(names, name)
-				addresses = append(addresses, address)
-			}
+		names = append(names, name)
+		addresses = append(addresses, address)
 
-			i++
-		}
+		i++
 	}
 
 	addressLen := 0
@@ -107,10 +91,6 @@ func StackTrace() []string {
 		writer.WriteString(names[i])
 		result[i] = writer.String()
 
-	}
-
-	for i := range result {
-		result[i] = result[i][projectPathLen:]
 	}
 
 	return result
