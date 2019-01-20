@@ -1,7 +1,6 @@
 package es
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"time"
@@ -9,32 +8,14 @@ import (
 	"github.com/andrew-suprun/legion/json"
 )
 
-type CommandType string
-type Command interface {
-	Validate(helper CommandHelper) error
-	Authorize(helper CommandHelper) error
-	Handle(helper CommandHelper) error
-}
-type CommandFactory func(CommandType) Command
-type CommandHelper interface {
-	Context() context.Context
-	ConnectionId() EntityId
-	CreateEntity(entity Entity)
-	FetchEntity(et EntityType, id EntityId) (Entity, error)
-	FetchEntityAt(et EntityType, id EntityId, timestamp time.Time) (Entity, error)
-	Reply(MessageType MessageType, info ...Info)
-	AddDiagnostic(code ErrorCode, desc string, info ...Info)
-
-	// TODO: extract those two methods into separate services
-	Now() time.Time
-	SendMessage(message Message)
-}
-
 type EventId string
+type CommandId string
+type CommandType string
+
 type Event struct {
 	EventId     EventId     `json:"event_id" bson:"event_id"`
 	CommandType CommandType `json:"command_type" bson:"command_type"`
-	CommandId   EntityId    `json:"command_id" bson:"command_id"`
+	CommandId   CommandId   `json:"command_id" bson:"command_id"`
 	EntityType  EntityType  `json:"entity_type" bson:"entity_type"`
 	EntityId    EntityId    `json:"entity_id" bson:"entity_id"`
 	Timestamp   time.Time   `json:"timestamp" bson:"timestamp"`
@@ -82,8 +63,6 @@ type Messages []Message
 func (m Messages) String() string {
 	return json.Encode(m)
 }
-
-type ErrorCode string
 
 type Info = map[string]interface{}
 type Infos []Info

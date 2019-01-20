@@ -10,20 +10,17 @@ import (
 
 	"sync"
 	"time"
-
-	"github.com/reillywatson/goloose"
 )
 
 const (
-	ServerError    es.ErrorCode = "server_error"
-	InvalidCommand es.ErrorCode = "invalid_command"
-	DatabaseError  es.ErrorCode = "database_error"
+	ServerError    errors.ErrorCode = "server_error"
+	InvalidCommand errors.ErrorCode = "invalid_command"
+	DatabaseError  errors.ErrorCode = "database_error"
 )
 
 type Server struct {
 	TimeService
 	Persistence
-	es.CommandFactory
 	es.EntityFactory
 }
 
@@ -38,18 +35,35 @@ type Persistence interface {
 	FetchEntityAt(et es.EntityType, id es.EntityId, timestamp time.Time) (es.Entity, error)
 }
 
-type ResultHandler func(*ServiceResult)
+type Command interface {
+	CommandType() es.CommandType
+	Validate(helper CommandHelper) error
+	Authorize(helper CommandHelper) error
+	Handle(helper CommandHelper) error
+}
+
+type CommandHelper interface {
+	Context() context.Context
+	ConnectionId() es.EntityId
+	CreateEntity(entity es.Entity)
+	FetchEntity(et es.EntityType, id es.EntityId) (es.Entity, error)
+	FetchEntityAt(et es.EntityType, id es.EntityId, timestamp time.Time) (es.Entity, error)
+	Reply(MessageType es.MessageType, info ...es.Info)
+	AddDiagnostic(code errors.ErrorCode, desc string, info ...es.Info)
+
+	// TODO: extract those two methods into separate services
+	Now() time.Time
+	SendMessage(message es.Message)
+}
 
 type ServiceResult struct {
-	ConnectionId es.EntityId    `json:"connection_id"`
-	CommandId    es.EntityId    `json:"command_id"`
-	CommandType  es.CommandType `json:"command_type"`
-	Command      es.Command     `json:"command,omitempty"`
-	Events       es.Events      `json:"events,omitempty"`
-	Messages     es.Messages    `json:"messages,omitempty"`
-	Diagnostics  errors.Errors  `json:"diagnostics,omitempty"`
-	Failure      error          `json:"failure,omitempty"`
-	Panic        interface{}    `json:"panic,omitempty"`
+	ConnectionId es.EntityId   `json:"connection_id"`
+	Command      Command       `json:"command,omitempty"`
+	Events       es.Events     `json:"events,omitempty"`
+	Messages     es.Messages   `json:"messages,omitempty"`
+	Diagnostics  errors.Errors `json:"diagnostics,omitempty"`
+	Failure      error         `json:"failure,omitempty"`
+	Panic        interface{}   `json:"panic,omitempty"`
 }
 
 func (r *ServiceResult) String() string {
@@ -63,14 +77,12 @@ const (
 func New(
 	ts TimeService,
 	p Persistence,
-	c es.CommandFactory,
 	e es.EntityFactory,
 ) *Server {
 	return &Server{
-		TimeService:    ts,
-		Persistence:    p,
-		CommandFactory: c,
-		EntityFactory:  e,
+		TimeService:   ts,
+		Persistence:   p,
+		EntityFactory: e,
 	}
 }
 
@@ -78,12 +90,10 @@ func (s *Server) Shutdown() {
 	// TODO:
 }
 
-func (s *Server) Serve(connId, cmdId es.EntityId, cmdType es.CommandType, msg es.Info) (resultChan chan interface{}) {
-	var cmd es.Command
+func (s *Server) Serve(connId es.EntityId, cmd Command) (resultChan chan interface{}) {
 	result := &ServiceResult{
 		ConnectionId: connId,
-		CommandId:    cmdId,
-		CommandType:  cmdType,
+		Command:      cmd,
 	}
 
 	activityResultChan := tasks.Start(
@@ -94,12 +104,6 @@ func (s *Server) Serve(connId, cmdId es.EntityId, cmdType es.CommandType, msg es
 				entities:    map[es.EntityId]es.Entity{},
 				result:      result,
 			}
-			cmd = s.CommandFactory(cmdType)
-			if cmd == nil {
-				return errors.NewError(errors.Failure, InvalidCommand, "Invalid command.")
-			}
-			goloose.ToStruct(msg, cmd)
-			h.result.Command = cmd
 			h.result.Failure = cmd.Validate(h)
 			if h.result.Failure != nil {
 				return h.result
@@ -194,7 +198,7 @@ func (h *commandHelper) FetchEntityAt(et es.EntityType, id es.EntityId, timestam
 	return entity, nil
 }
 
-func (h *commandHelper) AddDiagnostic(code es.ErrorCode, desc string, info ...es.Info) {
+func (h *commandHelper) AddDiagnostic(code errors.ErrorCode, desc string, info ...es.Info) {
 	h.lock.Lock()
 	h.result.Diagnostics = append(h.result.Diagnostics, errors.NewError(errors.Diagnostics, code, desc, info...))
 	h.lock.Unlock()

@@ -12,7 +12,7 @@ import (
 // TODO: Ability to chain errors
 type Error struct {
 	Severity    ErrorSeverity `json:"error_severity" bson:"error_severity"`
-	Code        es.ErrorCode  `json:"error_code" bson:"error_code"`
+	Code        ErrorCode     `json:"error_code" bson:"error_code"`
 	Description string        `json:"description" bson:"description"`
 	Info        es.Info       `json:"info,omitempty" bson:"info,omitempty"`
 	Trace       []string      `json:"stack_trace,omitempty" bson:"stack_trace,omitempty"`
@@ -27,12 +27,14 @@ const (
 	Alert       ErrorSeverity = "alert"       // authorities need to be alerted
 )
 
+type ErrorCode string
+
 const (
-	InvalidRequest es.ErrorCode = "invalid_request"
-	Unauthorized   es.ErrorCode = "unauthorized"
+	InvalidRequest ErrorCode = "invalid_request"
+	Unauthorized   ErrorCode = "unauthorized"
 )
 
-func NewError(severity ErrorSeverity, code es.ErrorCode, desc string, info ...es.Info) Error {
+func NewError(severity ErrorSeverity, code ErrorCode, desc string, info ...es.Info) Error {
 	merged := es.Info{}
 	for _, d := range info {
 		for k, v := range d {
