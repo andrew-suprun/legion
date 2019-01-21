@@ -3,6 +3,10 @@ package server
 import (
 	"context"
 
+	"github.com/andrew-suprun/legion/aggregates"
+
+	"github.com/reillywatson/goloose"
+
 	"github.com/andrew-suprun/legion/errors"
 	"github.com/andrew-suprun/legion/es"
 	"github.com/andrew-suprun/legion/json"
@@ -21,7 +25,7 @@ const (
 type Server struct {
 	TimeService
 	Persistence
-	es.EntityFactory
+	EntityFactory
 }
 
 type TimeService interface {
@@ -34,6 +38,8 @@ type Persistence interface {
 	FetchEntity(et es.EntityType, id es.EntityId) (es.Entity, error)
 	FetchEntityAt(et es.EntityType, id es.EntityId, timestamp time.Time) (es.Entity, error)
 }
+
+type EntityFactory func(et es.EntityType, id es.EntityId) es.Entity
 
 type Command interface {
 	CommandType() es.CommandType
@@ -57,6 +63,7 @@ type CommandHelper interface {
 }
 
 type ServiceResult struct {
+	CommandId    es.EntityId   `json:"command_id"`
 	ConnectionId es.EntityId   `json:"connection_id"`
 	Command      Command       `json:"command,omitempty"`
 	Events       es.Events     `json:"events,omitempty"`
@@ -77,7 +84,7 @@ const (
 func New(
 	ts TimeService,
 	p Persistence,
-	e es.EntityFactory,
+	e EntityFactory,
 ) *Server {
 	return &Server{
 		TimeService:   ts,
@@ -93,6 +100,7 @@ func (s *Server) Shutdown() {
 func (s *Server) Serve(connId es.EntityId, cmd Command) (resultChan chan interface{}) {
 	result := &ServiceResult{
 		ConnectionId: connId,
+		CommandId:    es.NewEntityId(),
 		Command:      cmd,
 	}
 
@@ -113,6 +121,7 @@ func (s *Server) Serve(connId es.EntityId, cmd Command) (resultChan chan interfa
 				return h.result
 			}
 			h.result.Failure = cmd.Handle(h)
+			h.createEventsFromEntities()
 			return h.result
 		},
 	)
@@ -123,6 +132,7 @@ func (s *Server) Serve(connId es.EntityId, cmd Command) (resultChan chan interfa
 			switch v := value.(type) {
 			case tasks.Panic:
 				result.Panic = v.Value
+				result.Failure = v.Err
 			case error:
 				result.Failure = v
 			}
@@ -139,6 +149,7 @@ type commandHelper struct {
 	persistence Persistence
 	result      *ServiceResult
 	entities    map[es.EntityId]es.Entity
+	entityData  map[es.EntityId]es.Info
 }
 
 func (h *commandHelper) Now() time.Time {
@@ -157,7 +168,7 @@ func (h *commandHelper) ConnectionId() es.EntityId {
 
 func (h *commandHelper) CreateEntity(entity es.Entity) {
 	h.lock.Lock()
-	h.entities[entity.Id()] = entity
+	h.entities[entity.EntityId()] = entity
 	h.lock.Unlock()
 }
 
@@ -177,15 +188,21 @@ func (h *commandHelper) FetchEntity(et es.EntityType, id es.EntityId) (es.Entity
 	h.lock.Lock()
 	entity, ok := h.entities[id]
 	h.lock.Unlock()
-	if ok && entity.Type() == et {
+	if ok && entity.EntityType() == et {
 		return entity, nil
 	}
 	entity, err := h.persistence.FetchEntity(et, id)
 	if err != nil {
 		return nil, err
 	}
+	if entity == nil {
+		return nil, nil
+	}
 	h.lock.Lock()
 	h.entities[id] = entity
+	var data es.Info
+	goloose.ToStruct(entity, &data)
+	h.entityData[id] = data
 	h.lock.Unlock()
 	return entity, nil
 }
@@ -202,6 +219,24 @@ func (h *commandHelper) AddDiagnostic(code errors.ErrorCode, desc string, info .
 	h.lock.Lock()
 	h.result.Diagnostics = append(h.result.Diagnostics, errors.NewError(errors.Diagnostics, code, desc, info...))
 	h.lock.Unlock()
+}
+
+func (h *commandHelper) createEventsFromEntities() {
+	for _, entity := range h.entities {
+		originalData := h.entityData[entity.EntityId()]
+		var updatedData es.Info
+		goloose.ToStruct(entity, &updatedData)
+		diff := aggregates.Diff(originalData, updatedData)
+		h.result.Events = append(h.result.Events, es.Event{
+			EventId:     es.NewEventId(),
+			CommandType: h.result.Command.CommandType(),
+			CommandId:   h.result.CommandId,
+			EntityType:  entity.EntityType(),
+			EntityId:    entity.EntityId(),
+			Timestamp:   h.timeService.Now(),
+			Info:        diff,
+		})
+	}
 }
 
 func mergeInfo(this, other es.Info) {

@@ -9,13 +9,12 @@ import (
 )
 
 type EventId string
-type CommandId string
 type CommandType string
 
 type Event struct {
 	EventId     EventId     `json:"event_id" bson:"event_id"`
 	CommandType CommandType `json:"command_type" bson:"command_type"`
-	CommandId   CommandId   `json:"command_id" bson:"command_id"`
+	CommandId   EntityId    `json:"command_id" bson:"command_id"`
 	EntityType  EntityType  `json:"entity_type" bson:"entity_type"`
 	EntityId    EntityId    `json:"entity_id" bson:"entity_id"`
 	Timestamp   time.Time   `json:"timestamp" bson:"timestamp"`
@@ -35,11 +34,14 @@ func (e Events) String() string {
 type EntityType string
 type EntityId string
 type Entity interface {
-	Id() EntityId
-	Type() EntityType
+	EntityId() EntityId
+	EntityType() EntityType
 }
 type Entities []Entity
-type EntityFactory func(et EntityType) Entity
+
+func NewEventId() EventId {
+	return EventId(NewEntityId())
+}
 
 func NewEntityId() EntityId {
 	var buf [15]byte

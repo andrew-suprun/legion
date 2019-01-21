@@ -4,12 +4,13 @@ import (
 	"time"
 
 	"github.com/andrew-suprun/legion/es"
+	"github.com/andrew-suprun/legion/server"
 )
 
 type persistence struct {
 }
 
-func NewPersistence(connectString string, entityFactory es.EntityFactory) *persistence {
+func NewPersistence(connectString string, entityFactory server.EntityFactory) *persistence {
 	return &persistence{}
 }
 

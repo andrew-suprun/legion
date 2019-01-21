@@ -1,8 +1,13 @@
 package tasks
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/andrew-suprun/legion/errors"
+)
 
 type Panic struct {
+	Err   errors.Error
 	Value interface{}
 }
 
@@ -16,7 +21,7 @@ func Start(activity func() interface{}) (resultChan chan interface{}) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				resultChan <- Panic{r}
+				resultChan <- Panic{Err: errors.NewError(errors.Alert, "PANIC", "Panic."), Value: r}
 			} else {
 				resultChan <- result
 			}

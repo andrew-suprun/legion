@@ -30,7 +30,7 @@ func Dump(value interface{}) string {
 var timeType = r.TypeOf(time.Time{})
 
 func dumpValue(v r.Value, prefix string, buf *bytes.Buffer, withType bool) {
-	if v.Type() == timeType {
+	if v.EntityType() == timeType {
 		t := v.Interface().(time.Time)
 		fmt.Fprintf(buf, "%v", t.Format("time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),"))
 		return
@@ -88,7 +88,7 @@ func dumpValue(v r.Value, prefix string, buf *bytes.Buffer, withType bool) {
 }
 
 func dumpStruct(v r.Value, prefix string, buf *bytes.Buffer, withType bool) {
-	t := v.Type()
+	t := v.EntityType()
 	if withType {
 		fmt.Fprintf(buf, "%s{", t)
 	} else {
@@ -105,7 +105,7 @@ func dumpStruct(v r.Value, prefix string, buf *bytes.Buffer, withType bool) {
 func dumpMap(v r.Value, prefix string, buf *bytes.Buffer, withType bool) {
 	keys := v.MapKeys()
 	if withType {
-		fmt.Fprintf(buf, "%s{", v.Type())
+		fmt.Fprintf(buf, "%s{", v.EntityType())
 	} else {
 		fmt.Fprintf(buf, "{")
 	}
@@ -127,7 +127,7 @@ func dumpSlice(v r.Value, prefix string, buf *bytes.Buffer, withType bool) {
 		return
 	}
 	if withType {
-		fmt.Fprintf(buf, "%s{", v.Type())
+		fmt.Fprintf(buf, "%s{", v.EntityType())
 	} else {
 		fmt.Fprintf(buf, "{")
 	}

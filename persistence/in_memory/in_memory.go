@@ -12,11 +12,11 @@ import (
 )
 
 type persistence struct {
-	entityFactory es.EntityFactory
+	entityFactory server.EntityFactory
 	events        map[es.EntityType]map[es.EntityId]es.Events
 }
 
-func NewPersistence(entityFactory es.EntityFactory) server.Persistence {
+func NewPersistence(entityFactory server.EntityFactory) server.Persistence {
 	return &persistence{
 		entityFactory: entityFactory,
 		events:        map[es.EntityType]map[es.EntityId]es.Events{},
@@ -48,7 +48,7 @@ func (p *persistence) FetchEntityAt(et es.EntityType, id es.EntityId, timestamp 
 }
 
 func (p *persistence) fetchEntity(et es.EntityType, id es.EntityId, filter func(es.Event) bool) (es.Entity, error) {
-	entity := p.entityFactory(et)
+	entity := p.entityFactory(et, id)
 	if entity == nil {
 		panic(errors.NewError(errors.Alert, server.ServerError, "Unknown entity type.", es.Info{"entity_type": et}))
 	}
