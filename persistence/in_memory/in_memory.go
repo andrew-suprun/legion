@@ -35,8 +35,7 @@ func (p *persistence) PersistEvent(event es.Event) {
 		typeEvents = map[es.EntityId]es.Events{}
 		p.events[event.EntityType] = typeEvents
 	}
-	entityEvents := typeEvents[event.EntityId]
-	entityEvents = append(entityEvents, event)
+	typeEvents[event.EntityId] = append(typeEvents[event.EntityId], event)
 }
 
 func (p *persistence) FetchEntity(et es.EntityType, id es.EntityId) (es.Entity, error) {

@@ -122,6 +122,7 @@ func (s *Server) Serve(connId es.EntityId, cmd Command) (resultChan chan interfa
 			}
 			h.result.Failure = cmd.Handle(h)
 			h.createEventsFromEntities()
+			h.persistence.PersistEvents(h.result.Events...)
 			return h.result
 		},
 	)
