@@ -43,10 +43,12 @@ func (l logs) String() string {
 
 	for _, log := range l {
 		if log.failed {
+			fmt.Fprint(buf, "ERR ")
 			for i := 0; i < log.level; i++ {
-				fmt.Fprint(buf, "--- ")
+				fmt.Fprint(buf, "    ")
 			}
 		} else {
+			fmt.Fprint(buf, "    ")
 			for i := 0; i < log.level; i++ {
 				fmt.Fprint(buf, "    ")
 			}

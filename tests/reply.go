@@ -89,21 +89,22 @@ func (r *reply) ValidateMessages(expectedMsgs ...es.Message) Reply {
 }
 
 func (r *reply) validateMessage(expectedMsg es.Message, receivedMessages es.Messages) Reply {
-	fmt.Printf("### validateMessage:\n expected %s\n", json.Encode(expectedMsg))
-	fmt.Printf("### validateMessage:\n received %s\n", json.Encode(receivedMessages))
-	succeeded := false
 	for _, receivedMsg := range receivedMessages {
 		if receivedMsg.ConnectionId == expectedMsg.ConnectionId && receivedMsg.MessageType == expectedMsg.MessageType {
 			validation := ValidateInfo(expectedMsg.Info, receivedMsg.Info)
 			if validation.Succeeded() {
-				succeeded = true
-				break
+				return r
 			}
+
+			r.test.FailWithResult(
+				fmt.Sprintf("Failed to validate message %q to connection %q:\n%s", expectedMsg.MessageType, expectedMsg.ConnectionId, validation),
+				r.GetResult())
+			return r
 		}
 	}
-	if !succeeded {
-		r.test.FailWithResult("Failed.", r.GetResult())
-	}
+	r.test.FailWithResult(
+		fmt.Sprintf("No message %q was sent to connection %q.", expectedMsg.MessageType, expectedMsg.ConnectionId),
+		r.GetResult())
 	return r
 }
 
