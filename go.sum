@@ -1,2 +1,5 @@
+github.com/andrew-suprun/legion v0.0.0-20190121204513-02fe5a8ec100/go.mod h1:1K2pVpBwFMXs64qNRkLtGlRGqMCKzAgIeOIH9tW5w4c=
+github.com/andrew-suprun/legion-services v0.0.0-20190121204626-c2b48ffc4d06 h1:0cZWWf9tj3dwghEKFPwEi+4KdlLdukxBGZxhMiOAZs0=
+github.com/andrew-suprun/legion-services v0.0.0-20190121204626-c2b48ffc4d06/go.mod h1:viEI5CAFGXZgaS2iIWbccGhmJBMQlXJyPzV27zwVmHY=
 github.com/reillywatson/goloose v0.0.0-20181020022016-e4c9c47d9c1e h1:sfBxuz+1ZskQFhcCwI61uQEfAZgfjsUklk+TbrTMmKQ=
 github.com/reillywatson/goloose v0.0.0-20181020022016-e4c9c47d9c1e/go.mod h1:ur2UoVBqW1u8n+7le9POGALQ6Y2K8MDBFF+TnVQbXYs=

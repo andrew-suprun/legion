@@ -17,15 +17,16 @@ import (
 )
 
 const (
-	ServerError    errors.ErrorCode = "server_error"
-	InvalidCommand errors.ErrorCode = "invalid_command"
-	DatabaseError  errors.ErrorCode = "database_error"
+	ServerError            errors.ErrorCode = "server_error"
+	InvalidCommand         errors.ErrorCode = "invalid_command"
+	DatabaseError          errors.ErrorCode = "database_error"
+	UnknownEntityTypeError errors.ErrorCode = "unknown_entity_type"
 )
 
 type Server struct {
-	TimeService
-	Persistence
-	EntityFactory
+	timeService    TimeService
+	persistence    Persistence
+	commandFactory CommandFactory
 }
 
 type TimeService interface {
@@ -39,7 +40,8 @@ type Persistence interface {
 	FetchEntityAt(et es.EntityType, id es.EntityId, timestamp time.Time) (es.Entity, error)
 }
 
-type EntityFactory func(et es.EntityType, id es.EntityId) es.Entity
+type CommandFactory func(cmdType es.CommandType, info es.Info) (Command, error)
+type EntityFactory func(et es.EntityType, id es.EntityId) (es.Entity, error)
 
 type Command interface {
 	CommandType() es.CommandType
@@ -81,34 +83,38 @@ const (
 	failure es.MessageType = "failure"
 )
 
-func New(
-	ts TimeService,
-	p Persistence,
-	e EntityFactory,
-) *Server {
+func New(timeService TimeService, persistence Persistence, commandFactory CommandFactory) *Server {
 	return &Server{
-		TimeService:   ts,
-		Persistence:   p,
-		EntityFactory: e,
+		timeService:    timeService,
+		persistence:    persistence,
+		commandFactory: commandFactory,
 	}
 }
 
 func (s *Server) Shutdown() {
-	// TODO:
+	// TODO: track requests in flight
 }
 
-func (s *Server) Serve(connId es.EntityId, cmd Command) (resultChan chan interface{}) {
+func (s *Server) Serve(connId es.EntityId, cmdType es.CommandType, cmdInfo es.Info) (resultChan chan interface{}) {
 	result := &ServiceResult{
 		ConnectionId: connId,
 		CommandId:    es.NewEntityId(),
-		Command:      cmd,
 	}
+
+	cmd, err := s.commandFactory(cmdType, cmdInfo)
+	if err != nil {
+		result.Failure = err
+		resultChan = make(chan interface{}, 1)
+		resultChan <- result
+		return resultChan
+	}
+	result.Command = cmd
 
 	activityResultChan := tasks.Start(
 		func() interface{} {
 			h := &commandHelper{
-				timeService: s.TimeService,
-				persistence: s.Persistence,
+				timeService: s.timeService,
+				persistence: s.persistence,
 				entities:    map[es.EntityId]es.Entity{},
 				result:      result,
 			}

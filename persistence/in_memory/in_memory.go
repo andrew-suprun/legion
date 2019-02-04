@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/andrew-suprun/legion/aggregates"
-	"github.com/andrew-suprun/legion/errors"
 	"github.com/andrew-suprun/legion/es"
 	"github.com/andrew-suprun/legion/server"
 
@@ -47,9 +46,9 @@ func (p *persistence) FetchEntityAt(et es.EntityType, id es.EntityId, timestamp 
 }
 
 func (p *persistence) fetchEntity(et es.EntityType, id es.EntityId, filter func(es.Event) bool) (es.Entity, error) {
-	entity := p.entityFactory(et, id)
-	if entity == nil {
-		panic(errors.NewError(errors.Alert, server.ServerError, "Unknown entity type.", es.Info{"entity_type": et}))
+	entity, err := p.entityFactory(et, id)
+	if err != nil {
+		return nil, err
 	}
 
 	events := p.fetchEntityEvents(et, id)
